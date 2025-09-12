@@ -1,0 +1,23 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.nyc_output/
+coverage/
+.DS_Store
+.env
+.idea/
+.vscode/
+*.log
+*.tgz
+
+# Build artifacts
+dist/
+build/
+
+# IDE specific files
+*.iml
+.project
+.classpath
+.settings/
