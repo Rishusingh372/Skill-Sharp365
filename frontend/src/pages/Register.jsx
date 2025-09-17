@@ -15,17 +15,42 @@ export default function Register(){
     } catch (err) { alert(err.response?.data?.message || 'Register failed'); }
   };
   return (
-    <div style={{maxWidth:400, margin:'20px auto'}}>
-      <h2>Register</h2>
-      <form onSubmit={submit}>
-        <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="Name" className="w-full p-2 mb-2" />
-        <input value={form.email} onChange={e=>setForm({...form,email:e.target.value})} placeholder="Email" className="w-full p-2 mb-2" />
-        <input type="password" value={form.password} onChange={e=>setForm({...form,password:e.target.value})} placeholder="Password" className="w-full p-2 mb-2" />
-        <select value={form.role} onChange={e=>setForm({...form,role:e.target.value})} className="w-full p-2 mb-2">
+    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-semibold mb-6 text-center">Register</h2>
+      <form onSubmit={submit} className="space-y-4">
+        <input
+          value={form.name}
+          onChange={e=>setForm({...form,name:e.target.value})}
+          placeholder="Name"
+          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          value={form.email}
+          onChange={e=>setForm({...form,email:e.target.value})}
+          placeholder="Email"
+          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          type="password"
+          value={form.password}
+          onChange={e=>setForm({...form,password:e.target.value})}
+          placeholder="Password"
+          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <select
+          value={form.role}
+          onChange={e=>setForm({...form,role:e.target.value})}
+          className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
           <option value="learner">Learner</option>
           <option value="instructor">Instructor</option>
         </select>
-        <button className="p-2" style={{background:'#0369a1', color:'#fff'}}>Register</button>
+        <button
+          type="submit"
+          className="w-full py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition"
+        >
+          Register
+        </button>
       </form>
     </div>
   );
