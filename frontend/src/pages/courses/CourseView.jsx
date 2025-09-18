@@ -1,60 +1,67 @@
-import React, { useEffect, useState, useContext } from 'react'
-import { useParams } from 'react-router-dom'
-import API from '../../services/api'
-import { AuthContext } from '../../contexts/AuthContext'
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
 
-export default function CourseView(){
-  const { slug } = useParams()
-  const { user } = useContext(AuthContext)
-  const [course, setCourse] = useState(null)
+export default function CourseView() {
+  const { courseId } = useParams();
+  const [course, setCourse] = useState(null);
+  const [currentVideo, setCurrentVideo] = useState(null);
 
-  useEffect(()=>{
-    API.get(`/courses/${slug}`)
-      .then(res => setCourse(res.data))
-      .catch(err => console.error(err))
-  },[slug])
+  useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        const res = await axios.get(`http://localhost:5000/api/courses/${courseId}`);
+        setCourse(res.data);
+        if (res.data.content.length > 0) {
+          setCurrentVideo(res.data.content[0]); // play first lecture
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchCourse();
+  }, [courseId]);
 
-  const enroll = async ()=>{
-    try{
-      await API.post(`/courses/${course._id}/enroll`)
-      alert('Enrolled')
-    }catch(err){ alert(err.response?.data?.message || 'Error') }
-  }
-
-  if (!course) return <div>Loading...</div>
+  if (!course) return <div className="p-6">Loading course...</div>;
 
   return (
-    <div className="p-6">
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <img src={course.thumbnail} alt="thumb" className="w-full h-64 object-cover rounded" />
-          <h1 className="text-2xl font-bold mt-3">{course.title}</h1>
-          <p className="mt-2">{course.description}</p>
+    <div className="flex flex-col md:flex-row h-screen">
+      {/* Sidebar */}
+      <div className="w-full md:w-1/4 bg-gray-100 p-4 overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4">{course.title}</h2>
+        <ul className="space-y-2">
+          {course.content.map((item, index) => (
+            <li
+              key={index}
+              className={`p-2 cursor-pointer rounded ${
+                currentVideo?._id === item._id ? "bg-blue-500 text-white" : "bg-white"
+              }`}
+              onClick={() => setCurrentVideo(item)}
+            >
+              🎬 {item.title}
+            </li>
+          ))}
+        </ul>
+      </div>
 
-          <h2 className="font-semibold mt-4">Lectures</h2>
-          <ul className="mt-2 space-y-2">
-            {course.lectures.map((lec, i) => (
-              <li key={i} className="bg-white p-3 rounded shadow">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-semibold">{lec.title}</div>
-                    <div className="text-sm">Duration: {lec.duration || '—'}</div>
-                  </div>
-                  <a className="text-blue-600" href={lec.videoUrl} target="_blank">Open</a>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="bg-white p-4 rounded shadow">
-          <p>Teacher: {course.teacher?.name}</p>
-          <p>Price: ₹{course.price}</p>
-          {!user || user.role === 'teacher' ? null : (
-            <button onClick={enroll} className="mt-4 w-full p-2 bg-blue-600 text-white rounded">Enroll</button>
-          )}
-        </div>
+      {/* Video Player */}
+      <div className="flex-1 flex flex-col bg-black text-white">
+        {currentVideo ? (
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <video
+              key={currentVideo.url}
+              src={currentVideo.url}
+              controls
+              className="w-full h-full"
+            />
+            <h3 className="text-lg font-semibold p-4">{currentVideo.title}</h3>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <p>No video selected</p>
+          </div>
+        )}
       </div>
     </div>
-  )
+  );
 }

@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 
 import authRoutes from './routes/auth.js';
-import courseRoutes from './routes/courses.js';
+import courseRoutes from './routes/courseRoutes.js';
 import adminRoutes from './routes/admin.js';
 import uploadRoutes from './routes/uploads.js';
 
