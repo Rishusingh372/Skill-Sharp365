@@ -1,25 +1,52 @@
-import React, { useEffect, useState } from 'react';
-import api from '../api/api';
-import { Link } from 'react-router-dom';
+import React from "react";
+import Hero from "../components/Hero";
 
-export default function Home(){
-  const [courses, setCourses] = useState([]);
-  useEffect(()=>{ api.get('/courses').then(r=>setCourses(r.data)).catch(console.error); }, []);
+export default function Home() {
   return (
     <div>
-      <h1 style={{fontSize:22}}>Featured Courses</h1>
-      <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginTop:12}}>
-        {courses.map(c=>(
-          <div key={c._id} style={{border:'1px solid #ddd', padding:12, borderRadius:6}}>
-            <h3>{c.title}</h3>
-            <p>{c.description?.slice(0,120)}</p>
-            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-              <div>₹{c.price||0}</div>
-              <Link to={`/courses/${c._id}`}>View</Link>
-            </div>
+      <Hero />
+
+      {/* Featured Courses */}
+      <section className="container mx-auto px-6 py-16">
+        <h2 className="text-3xl font-bold text-center mb-8">Popular Courses</h2>
+        <div className="grid md:grid-cols-3 gap-6">
+          <div className="bg-white p-6 shadow-md rounded-lg">
+            <img
+              src="https://images.unsplash.com/photo-1557804506-669a67965ba0"
+              alt="Course"
+              className="rounded-md mb-4"
+            />
+            <h3 className="text-lg font-semibold">Full-Stack Development</h3>
+            <p className="text-gray-600 text-sm mt-2">
+              Learn MERN stack with real projects.
+            </p>
           </div>
-        ))}
-      </div>
+          <div className="bg-white p-6 shadow-md rounded-lg">
+            <img
+              src="https://images.unsplash.com/photo-1519389950473-47ba0277781c"
+              alt="Course"
+              className="rounded-md mb-4"
+            />
+            <h3 className="text-lg font-semibold">
+              Data Structures & Algorithms
+            </h3>
+            <p className="text-gray-600 text-sm mt-2">
+              Master DSA for coding interviews.
+            </p>
+          </div>
+          <div className="bg-white p-6 shadow-md rounded-lg">
+            <img
+              src="https://images.unsplash.com/photo-1556157382-97eda2b7c299"
+              alt="Course"
+              className="rounded-md mb-4"
+            />
+            <h3 className="text-lg font-semibold">Machine Learning Basics</h3>
+            <p className="text-gray-600 text-sm mt-2">
+              Get started with AI and ML models.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
