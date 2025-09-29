@@ -16,7 +16,8 @@ router.post('/register', async (req ,res)=>{
 
         // Create new user
         const user = new User({username: name, email, password, role});
-        
+        await user.save();
+
         // Generate JWT token
         const token =jwt.sign(
             {userId: user._id, role: user.role},
