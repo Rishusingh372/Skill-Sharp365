@@ -1,6 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const{authMiddleware} = require('../middlewares/authMiddleware')
+
 const router = express.Router();
 
 // Register
@@ -63,4 +65,50 @@ router.post('/login', async (req ,res)=>{
     }
 });
 
+// 
+// 🔐 PROTECTED ROUTE: Get current user profile
+router.get('/me', authMiddleware, async (req, res) => {
+    try {
+        res.json({
+            success: true,
+            user: {
+                id: req.user._id,
+                name: req.user.name,
+                email: req.user.email,
+                role: req.user.role,
+                createdAt: req.user.createdAt
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error', 
+            error: error.message 
+        });
+    }
+});
+
+// 🔐 PROTECTED ROUTE: Update user profile (example)
+router.put('/profile', authMiddleware, async (req, res) => {
+    try {
+        const { name } = req.body;
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { name },
+            { new: true }
+        ).select('-password');
+
+        res.json({
+            success: true,
+            message: 'Profile updated successfully',
+            user
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false,
+            message: 'Server error', 
+            error: error.message 
+        });
+    }
+});
 module.exports = router;
