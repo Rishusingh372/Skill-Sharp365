@@ -362,4 +362,84 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
 });
 
+// ✅ CREATE NEW COURSE (Instructors only) - UPDATED FOR CLOUDINARY
+router.post('/', authMiddleware, requireInstructor, async (req, res) => {
+    try {
+        const {
+            title,
+            description,
+            shortDescription,
+            price,
+            thumbnail, // Now this should be the Cloudinary URL from upload
+            category,
+            level,
+            requirements,
+            learningOutcomes,
+            tags,
+            totalHours,
+            language
+        } = req.body;
+
+        // Validate required fields
+        if (!title || !description || !price || !thumbnail || !category) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Title, description, price, thumbnail, and category are required' 
+            });
+        }
+
+        // Validate thumbnail is a Cloudinary URL
+        if (!thumbnail.includes('cloudinary.com')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid thumbnail URL. Please upload image first.'
+            });
+        }
+
+        // Create course
+        const course = await Course.create({
+            title,
+            description,
+            shortDescription: shortDescription || description.substring(0, 200),
+            price: Number(price),
+            thumbnail,
+            instructor: req.user._id,
+            category,
+            level: level || 'beginner',
+            requirements: requirements || [],
+            learningOutcomes: learningOutcomes || [],
+            tags: tags || [],
+            totalHours: totalHours || 0,
+            language: language || 'English'
+        });
+
+        // Populate instructor details
+        await course.populate('instructor', 'name email');
+
+        res.status(201).json({
+            success: true,
+            message: 'Course created successfully',
+            course
+        });
+
+    } catch (error) {
+        console.error('Create course error:', error);
+        
+        if (error.name === 'ValidationError') {
+            const errors = Object.values(error.errors).map(err => err.message);
+            return res.status(400).json({ 
+                success: false,
+                message: 'Validation error',
+                errors 
+            });
+        }
+
+        res.status(500).json({ 
+            success: false,
+            message: 'Error creating course', 
+            error: error.message 
+        });
+    }
+});
+
 module.exports = router;
