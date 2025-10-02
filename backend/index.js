@@ -4,6 +4,7 @@ require('dotenv').config();
 const courseRoutes = require('./routes/courseRoutes');
 const testRoutes = require('./routes/testRoutes');
 const authRoutes = require('./routes/authRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 const cors = require('cors');
 
 const app = express();
@@ -12,7 +13,7 @@ app.use(cors());
 
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log(err));
 
@@ -20,6 +21,7 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes); // Add this line
 app.use('/api/test', testRoutes); // Your test routes from Day 3
+app.use('/api/upload', uploadRoutes);
 
 
 // port listening
