@@ -5,7 +5,29 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['student', 'instructor', 'admin'], default: 'student' }
+  role: { type: String, enum: ['student', 'instructor', 'admin'], default: 'student' },
+
+   // Add enrolled courses array
+    enrolledCourses: [{
+        course: { 
+            type: mongoose.Schema.Types.ObjectId, 
+            ref: 'Course' 
+        },
+        enrolledAt: { 
+            type: Date, 
+            default: Date.now 
+        },
+        progress: {
+            completedLessons: [{ type: mongoose.Schema.Types.ObjectId }],
+            lastAccessed: { type: Date, default: Date.now },
+            completionPercentage: { type: Number, default: 0 }
+        }
+    }],
+    
+    // Stripe customer ID for future payments
+    stripeCustomerId: {
+        type: String
+    }
 }, { timestamps: true });
 
 

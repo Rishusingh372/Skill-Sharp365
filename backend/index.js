@@ -5,6 +5,7 @@ const courseRoutes = require('./routes/courseRoutes');
 const testRoutes = require('./routes/testRoutes');
 const authRoutes = require('./routes/authRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 const cors = require('cors');
 
 const app = express();
@@ -18,10 +19,11 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.log(err));
 
 // Mount routes
-app.use('/api/auth', authRoutes);
-app.use('/api/courses', courseRoutes); // Add this line
-app.use('/api/test', testRoutes); // Your test routes from Day 3
-app.use('/api/upload', uploadRoutes);
+app.use('/api/auth', authRoutes); // auth routes
+app.use('/api/courses', courseRoutes); // course routes
+app.use('/api/test', testRoutes); // test routes
+app.use('/api/upload', uploadRoutes); // upload routes
+app.use('/api/payment', paymentRoutes); // pyment routes
 
 
 // port listening
