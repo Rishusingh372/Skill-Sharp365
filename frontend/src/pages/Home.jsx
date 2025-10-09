@@ -1,6 +1,27 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { courseService } from '../services/courseService';
+import CourseCard from '../components/CourseCard';
 
 const Home = () => {
+  const [featuredCourses, setFeaturedCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadFeaturedCourses();
+  }, []);
+
+  const loadFeaturedCourses = async () => {
+    try {
+      const response = await courseService.getFeaturedCourses();
+      setFeaturedCourses(response.courses || []);
+    } catch (error) {
+      console.error('Error loading featured courses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -27,8 +48,44 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Featured Courses */}
       <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Featured Courses
+            </h2>
+            <p className="text-gray-600 text-lg">
+              Discover our most popular courses
+            </p>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center">
+              <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+            </div>
+          ) : featuredCourses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+              {featuredCourses.map((course) => (
+                <CourseCard key={course._id} course={course} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-600">No featured courses available yet.</p>
+            </div>
+          )}
+
+          <div className="text-center">
+            <Link to="/courses" className="btn-primary">
+              View All Courses
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
@@ -81,6 +138,27 @@ const Home = () => {
                 Get lifetime access to course materials and future updates.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-primary-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to Start Learning?
+          </h2>
+          <p className="text-primary-100 text-lg mb-8 max-w-2xl mx-auto">
+            Join thousands of students already learning on our platform. 
+            Start your learning journey today.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/signup" className="btn bg-white text-primary-600 hover:bg-gray-100 text-lg px-8 py-3">
+              Get Started
+            </Link>
+            <Link to="/courses" className="btn bg-transparent border-2 border-white text-white hover:bg-primary-700 text-lg px-8 py-3">
+              Browse Courses
+            </Link>
           </div>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import api from '../config/axios';
 
 const AuthContext = createContext();
@@ -28,6 +29,7 @@ export const AuthProvider = ({ children }) => {
         const response = await api.get('/auth/me');
         setUser(response.data.user);
         setIsAuthenticated(true);
+        toast.success(`Welcome back, ${response.data.user.name}!`);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -46,11 +48,14 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setIsAuthenticated(true);
       
+      toast.success(`Welcome back, ${user.name}!`);
       return { success: true, data: response.data };
     } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Login failed';
+      toast.error(errorMessage);
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Login failed' 
+        error: errorMessage 
       };
     }
   };
@@ -64,11 +69,14 @@ export const AuthProvider = ({ children }) => {
       setUser(user);
       setIsAuthenticated(true);
       
+      toast.success(`Welcome to LearnHub, ${user.name}!`);
       return { success: true, data: response.data };
     } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Registration failed';
+      toast.error(errorMessage);
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Registration failed' 
+        error: errorMessage 
       };
     }
   };
@@ -77,6 +85,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setUser(null);
     setIsAuthenticated(false);
+    toast.info('You have been logged out successfully.');
     window.location.href = '/';
   };
 
@@ -84,11 +93,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.put('/auth/profile', profileData);
       setUser(response.data.user);
+      toast.success('Profile updated successfully!');
       return { success: true, data: response.data };
     } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Profile update failed';
+      toast.error(errorMessage);
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Profile update failed' 
+        error: errorMessage 
       };
     }
   };
