@@ -6,6 +6,7 @@ const testRoutes = require('./routes/testRoutes');
 const authRoutes = require('./routes/authRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const cors = require('cors');
 
 const app = express();
@@ -24,6 +25,7 @@ app.use('/api/courses', courseRoutes); // course routes
 app.use('/api/test', testRoutes); // test routes
 app.use('/api/upload', uploadRoutes); // upload routes
 app.use('/api/payment', paymentRoutes); // pyment routes
+app.use('/api/admin', adminRoutes); // routes for admin
 
 
 // port listening

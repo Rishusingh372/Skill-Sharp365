@@ -61,6 +61,7 @@ const requireAdmin = (req, res, next) => {
     next();
 };
 
+
 module.exports = { 
     authMiddleware, 
     requireInstructor, 

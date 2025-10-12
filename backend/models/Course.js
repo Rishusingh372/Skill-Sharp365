@@ -24,7 +24,7 @@ const courseSchema = new mongoose.Schema({
     },
     thumbnail: { 
         type: String, 
-        required: [true, 'Course thumbnail is required']
+       
     },
     instructor: { 
         type: mongoose.Schema.Types.ObjectId, 
