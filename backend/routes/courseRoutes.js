@@ -1,5 +1,5 @@
 const express = require('express');
-const { authMiddleware, requireInstructor, requireAdmin } = require('../middlewares/authMiddleware');
+const { authMiddleware, requireInstructor, requireAdmin } = require('../middleware/authMiddleware');
 const Course = require('../models/Course');
 const router = express.Router();
 
@@ -310,7 +310,7 @@ router.post('/', authMiddleware, requireInstructor, async (req, res) => {
         } = req.body;
 
         // Validate required fields
-        if (!title || !description || !price || !thumbnail || !category) {
+        if (!title || !description || !price ||  !category) {
             return res.status(400).json({ 
                 success: false,
                 message: 'Title, description, price, thumbnail, and category are required' 
@@ -318,12 +318,12 @@ router.post('/', authMiddleware, requireInstructor, async (req, res) => {
         }
 
         // Validate thumbnail is a Cloudinary URL
-        if (!thumbnail.includes('cloudinary.com')) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid thumbnail URL. Please upload image first.'
-            });
-        }
+        // if (!thumbnail.includes('cloudinary.com')) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: 'Invalid thumbnail URL. Please upload image first.'
+        //     });
+        // }
 
         // Create course
         const course = await Course.create({
