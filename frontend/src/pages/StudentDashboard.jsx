@@ -7,13 +7,15 @@ import { paymentService } from '../services/paymentService';
 const StudentDashboard = () => {
   const { user } = useAuth();
   const [enrolledCourses, setEnrolledCourses] = useState([]);
+  const [paymentHistory, setPaymentHistory] = useState([]);
   const [learningStats, setLearningStats] = useState({
     totalCourses: 0,
     completedCourses: 0,
     inProgressCourses: 0,
     totalLearningHours: 0,
     currentStreak: 0,
-    completionPercentage: 0
+    completionPercentage: 0,
+    totalSpent: 0
   });
   const [recentActivity, setRecentActivity] = useState([]);
   const [courseRecommendations, setCourseRecommendations] = useState([]);
@@ -43,6 +45,10 @@ const StudentDashboard = () => {
         calculateLearningStats(courses);
       }
 
+      // Load payment history
+      const paymentsResponse = await paymentService.getPaymentHistory();
+      setPaymentHistory(paymentsResponse.payments || []);
+
       // Load recent activity (simulated)
       setRecentActivity([
         { type: 'completed', course: 'JavaScript Basics', time: '2 hours ago' },
@@ -70,7 +76,10 @@ const StudentDashboard = () => {
     const inProgressCourses = totalCourses - completedCourses;
     const totalLearningHours = courses.reduce((total, course) => total + (course.totalHours || 0), 0);
     
-    // Simulate completion percentage (in real app, calculate from user progress)
+    // Calculate total spent from payment history
+    const totalSpent = paymentHistory.reduce((total, payment) => total + (payment.amount || 0), 0) / 100;
+    
+    // Simulate completion percentage
     const completionPercentage = totalCourses > 0 ? Math.round((completedCourses / totalCourses) * 100) : 0;
     
     setLearningStats({
@@ -78,21 +87,48 @@ const StudentDashboard = () => {
       completedCourses,
       inProgressCourses,
       totalLearningHours,
-      currentStreak: 7, // Simulated streak
-      completionPercentage
+      currentStreak: 7,
+      completionPercentage,
+      totalSpent
     });
   };
 
   const continueLearning = enrolledCourses.slice(0, 3);
 
-  const formatTime = (hours) => {
-    if (hours < 1) return `${Math.round(hours * 60)} mins`;
-    return `${hours} hours`;
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   const getProgressPercentage = (courseId) => {
     const enrollment = user.enrolledCourses?.find(e => e.course === courseId);
     return enrollment?.progress?.completionPercentage || 0;
+  };
+
+  const getPaymentStatusBadge = (status) => {
+    const statusConfig = {
+      completed: { color: 'green', text: 'Completed' },
+      pending: { color: 'yellow', text: 'Pending' },
+      failed: { color: 'red', text: 'Failed' },
+      refunded: { color: 'gray', text: 'Refunded' }
+    };
+    
+    const config = statusConfig[status] || { color: 'gray', text: status };
+    return (
+      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-${config.color}-100 text-${config.color}-800`}>
+        {config.text}
+      </span>
+    );
   };
 
   if (loading) {
@@ -137,6 +173,7 @@ const StudentDashboard = () => {
               {[
                 { id: 'overview', name: 'Overview', icon: '📊' },
                 { id: 'my-courses', name: 'My Courses', icon: '📚' },
+                { id: 'purchases', name: 'Purchase History', icon: '💰' },
                 { id: 'progress', name: 'Progress', icon: '🎯' },
                 { id: 'achievements', name: 'Achievements', icon: '🏆' }
               ].map((tab) => (
@@ -197,18 +234,18 @@ const StudentDashboard = () => {
                 </div>
               </div>
 
-              {/* Completion Rate */}
+              {/* Total Spent */}
               <div className="card p-6">
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
                     <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                     </svg>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Completion Rate</p>
-                    <p className="text-2xl font-bold text-gray-900">{learningStats.completionPercentage}%</p>
-                    <p className="text-xs text-gray-500 mt-1">Overall progress</p>
+                    <p className="text-sm font-medium text-gray-600">Total Invested</p>
+                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(learningStats.totalSpent)}</p>
+                    <p className="text-xs text-gray-500 mt-1">In your education</p>
                   </div>
                 </div>
               </div>
@@ -449,6 +486,116 @@ const StudentDashboard = () => {
           </div>
         )}
 
+        {/* Purchase History Tab */}
+        {activeTab === 'purchases' && (
+          <div className="card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Purchase History</h2>
+              <div className="text-sm text-gray-600">
+                Total Spent: <span className="font-semibold text-green-600">{formatCurrency(learningStats.totalSpent)}</span>
+              </div>
+            </div>
+
+            {paymentHistory.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead>
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {paymentHistory.map((payment) => (
+                      <tr key={payment._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-3">
+                            <img
+                              src={payment.course?.thumbnail}
+                              alt={payment.course?.title}
+                              className="w-10 h-8 object-cover rounded"
+                            />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {payment.course?.title}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                by {payment.course?.instructor?.name}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                          {formatCurrency(payment.amount / 100)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {getPaymentStatusBadge(payment.status)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(payment.createdAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          {payment.receiptUrl ? (
+                            <a
+                              href={payment.receiptUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary-600 hover:text-primary-900"
+                            >
+                              View Receipt
+                            </a>
+                          ) : (
+                            <span className="text-gray-400">No receipt</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No purchases yet</h3>
+                <p className="text-gray-600 mb-6">Your purchase history will appear here after you enroll in courses.</p>
+                <Link to="/courses" className="btn-primary">
+                  Browse Courses
+                </Link>
+              </div>
+            )}
+
+            {/* Purchase Summary */}
+            {paymentHistory.length > 0 && (
+              <div className="mt-8 p-6 bg-gray-50 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Purchase Summary</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-900">{paymentHistory.length}</div>
+                    <div className="text-sm text-gray-600">Total Purchases</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatCurrency(learningStats.totalSpent)}
+                    </div>
+                    <div className="text-sm text-gray-600">Total Amount</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatCurrency(learningStats.totalSpent / paymentHistory.length)}
+                    </div>
+                    <div className="text-sm text-gray-600">Average per Course</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Progress Tab */}
         {activeTab === 'progress' && (
           <div className="card p-6">
@@ -559,14 +706,14 @@ const StudentDashboard = () => {
                 <p className="text-sm text-gray-600">courses completed</p>
               </div>
 
-              {/* Time Invested */}
-              <div className="border border-blue-200 rounded-lg p-6 bg-blue-50 text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">⏱️</span>
+              {/* Smart Investor */}
+              <div className="border border-purple-200 rounded-lg p-6 bg-purple-50 text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">💰</span>
                 </div>
-                <h3 className="font-semibold text-gray-900 mb-2">Time Invested</h3>
-                <p className="text-3xl font-bold text-blue-600 mb-2">{learningStats.totalLearningHours}</p>
-                <p className="text-sm text-gray-600">hours learning</p>
+                <h3 className="font-semibold text-gray-900 mb-2">Smart Investor</h3>
+                <p className="text-3xl font-bold text-purple-600 mb-2">{formatCurrency(learningStats.totalSpent)}</p>
+                <p className="text-sm text-gray-600">invested in learning</p>
               </div>
             </div>
 
