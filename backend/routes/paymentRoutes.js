@@ -12,6 +12,8 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
     try {
         const { courseId } = req.body;
 
+        console.log('Creating checkout session for course:', courseId, 'user:', req.user._id);
+
         // Validate course exists and is published
         const course = await Course.findOne({ 
             _id: courseId, 
@@ -104,6 +106,8 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
             expires_at: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes
         });
 
+        console.log('Stripe session created:', session.id);
+
         // Create payment record in database
         await Payment.create({
             user: user._id,
@@ -134,6 +138,8 @@ router.post('/create-checkout-session', authMiddleware, async (req, res) => {
 router.post('/verify', authMiddleware, async (req, res) => {
     try {
         const { sessionId } = req.body;
+
+        console.log('Verifying payment for session:', sessionId);
 
         const session = await stripe.checkout.sessions.retrieve(sessionId, {
             expand: ['payment_intent']
@@ -167,6 +173,8 @@ router.post('/verify', authMiddleware, async (req, res) => {
             payment.receiptUrl = paymentIntent.charges.data[0].receipt_url;
             await payment.save();
 
+            console.log('Payment verified, enrolling user:', payment.user);
+
             // Enroll user in course
             const user = await User.findById(payment.user);
             const isEnrolled = user.enrolledCourses.some(
@@ -176,9 +184,15 @@ router.post('/verify', authMiddleware, async (req, res) => {
             if (!isEnrolled) {
                 user.enrolledCourses.push({
                     course: payment.course,
-                    enrolledAt: new Date()
+                    enrolledAt: new Date(),
+                    progress: {
+                        completedLessons: [],
+                        lastAccessed: new Date(),
+                        completionPercentage: 0
+                    }
                 });
                 await user.save();
+                console.log('User enrolled successfully');
             }
 
             // Update course student count
@@ -186,6 +200,8 @@ router.post('/verify', authMiddleware, async (req, res) => {
                 $addToSet: { studentsEnrolled: payment.user },
                 $inc: { totalStudents: 1 }
             });
+
+            console.log('Course student count updated');
 
             res.json({
                 success: true,

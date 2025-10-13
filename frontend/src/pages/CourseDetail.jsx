@@ -41,6 +41,7 @@ const CourseDetail = () => {
 
   const handleEnroll = async () => {
     if (!isAuthenticated) {
+      toast.info('Please login to enroll in this course');
       navigate('/login', { state: { from: `/courses/${id}` } });
       return;
     }
@@ -54,6 +55,7 @@ const CourseDetail = () => {
       );
 
       if (isEnrolled) {
+        toast.info('You are already enrolled in this course');
         navigate(`/learn/${id}`);
         return;
       }
@@ -64,14 +66,24 @@ const CourseDetail = () => {
         return;
       }
 
+      if (!course.isPublished) {
+        toast.error('This course is not available for enrollment yet');
+        return;
+      }
+
       // Create checkout session
       const response = await paymentService.createCheckoutSession(id);
       
-      // Redirect to Stripe checkout
-      window.location.href = response.url;
+      if (response.success && response.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.url;
+      } else {
+        throw new Error('Failed to create checkout session');
+      }
       
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to enroll in course');
+      console.error('Enrollment error:', error);
+      toast.error(error.response?.data?.message || 'Failed to enroll in course. Please try again.');
     } finally {
       setEnrolling(false);
     }
@@ -117,7 +129,7 @@ const CourseDetail = () => {
               </nav>
 
               <h1 className="text-3xl font-bold text-gray-900 mb-4">{course.title}</h1>
-              <p className="text-lg text-gray-600 mb-6">{course.shortDescription}</p>
+              <p className="text-lg text-gray-600 mb-6">{course.shortDescription || course.description.substring(0, 200)}...</p>
 
               <div className="flex items-center space-x-6 text-sm text-gray-600 mb-6">
                 <div className="flex items-center">
@@ -132,7 +144,7 @@ const CourseDetail = () => {
                   <svg className="w-4 h-4 mr-1 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                  <span>{course.rating || 'New'} • {course.totalStudents} students</span>
+                  <span>{course.rating || 'New'} • {course.totalStudents || 0} students</span>
                 </div>
               </div>
 
@@ -140,6 +152,7 @@ const CourseDetail = () => {
                 <span className="badge bg-primary-100 text-primary-700 capitalize">{course.level}</span>
                 <span className="badge bg-gray-100 text-gray-700 capitalize">{course.category}</span>
                 {!course.isPublished && <span className="badge-warning">Draft</span>}
+                {course.isFeatured && <span className="badge-success">Featured</span>}
               </div>
             </div>
 
@@ -150,7 +163,15 @@ const CourseDetail = () => {
                   <div className="mb-4">
                     <div className="flex items-baseline space-x-2">
                       <span className="text-3xl font-bold text-gray-900">${course.price}</span>
+                      {course.originalPrice && (
+                        <span className="text-lg text-gray-500 line-through">${course.originalPrice}</span>
+                      )}
                     </div>
+                    {course.originalPrice && (
+                      <p className="text-sm text-green-600 mt-1">
+                        Save ${(course.originalPrice - course.price).toFixed(2)}
+                      </p>
+                    )}
                   </div>
 
                   {isCourseOwner ? (
@@ -169,12 +190,16 @@ const CourseDetail = () => {
                     <div className="space-y-3">
                       <Link
                         to={`/learn/${id}`}
-                        className="w-full btn-success"
+                        className="w-full btn-success flex items-center justify-center space-x-2"
                       >
-                        Continue Learning
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Continue Learning</span>
                       </Link>
                       <p className="text-sm text-success-600 text-center">
-                        You're enrolled in this course
+                        ✅ You're enrolled in this course
                       </p>
                     </div>
                   ) : (
@@ -182,26 +207,39 @@ const CourseDetail = () => {
                       <button
                         onClick={handleEnroll}
                         disabled={enrolling || !course.isPublished}
-                        className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                       >
                         {enrolling ? (
-                          <div className="flex items-center justify-center">
-                            <div className="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin mr-2"></div>
-                            Processing...
-                          </div>
+                          <>
+                            <div className="w-5 h-5 border-t-2 border-white border-solid rounded-full animate-spin"></div>
+                            <span>Processing...</span>
+                          </>
                         ) : (
-                          'Enroll Now'
+                          <>
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            <span>Enroll Now</span>
+                          </>
                         )}
                       </button>
                       
                       {!course.isPublished && (
                         <p className="text-sm text-warning-600 text-center">
-                          This course is not published yet
+                          ⚠️ This course is not published yet
                         </p>
                       )}
                       
-                      <div className="text-xs text-gray-600 text-center">
-                        30-day money-back guarantee
+                      <div className="text-center space-y-2">
+                        <div className="text-xs text-gray-600">
+                          ✅ 30-day money-back guarantee
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          ✅ Full lifetime access
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          ✅ Certificate of completion
+                        </div>
                       </div>
                     </div>
                   )}
@@ -209,7 +247,7 @@ const CourseDetail = () => {
                   <div className="mt-6 space-y-3 text-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Duration</span>
-                      <span className="font-medium">{course.totalHours} hours</span>
+                      <span className="font-medium">{course.totalHours || 0} hours</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-gray-600">Level</span>
@@ -219,7 +257,18 @@ const CourseDetail = () => {
                       <span className="text-gray-600">Language</span>
                       <span className="font-medium">{course.language}</span>
                     </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Lectures</span>
+                      <span className="font-medium">{course.lectures || 0}</span>
+                    </div>
                   </div>
+
+                  {/* Add to Wishlist */}
+                  {!isCourseOwner && !isEnrolled && (
+                    <button className="w-full mt-4 text-center text-primary-600 hover:text-primary-700 text-sm font-medium">
+                      ♡ Add to Wishlist
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -244,6 +293,9 @@ const CourseDetail = () => {
                     <span className="text-gray-700">{outcome}</span>
                   </div>
                 ))}
+                {(!course.learningOutcomes || course.learningOutcomes.length === 0) && (
+                  <p className="text-gray-600">Learning outcomes will be added soon.</p>
+                )}
               </div>
             </section>
 
@@ -254,32 +306,59 @@ const CourseDetail = () => {
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="font-semibold text-gray-900">Course Modules</h3>
+                      <h3 className="font-semibold text-gray-900">Course Curriculum</h3>
                       <p className="text-sm text-gray-600">
                         {course.lectures || 0} lectures • {course.totalHours || 0} total hours
                       </p>
                     </div>
+                    {isEnrolled && (
+                      <span className="text-sm text-success-600 font-medium">Enrolled ✓</span>
+                    )}
                   </div>
                   
-                  <div className="text-center py-8">
-                    <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p className="text-gray-600">Course content will be available after enrollment</p>
-                  </div>
+                  {isEnrolled ? (
+                    <div className="text-center py-6">
+                      <svg className="w-12 h-12 text-success-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-gray-600">You have full access to this course!</p>
+                      <Link
+                        to={`/learn/${id}`}
+                        className="btn-primary mt-4 inline-block"
+                      >
+                        Start Learning
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      <p className="text-gray-600">Course content will be available after enrollment</p>
+                      <button
+                        onClick={handleEnroll}
+                        disabled={enrolling || !course.isPublished}
+                        className="btn-primary mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {enrolling ? 'Processing...' : 'Enroll to Access Content'}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
 
             {/* Requirements */}
-            <section className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Requirements</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {course.requirements?.map((requirement, index) => (
-                  <li key={index}>{requirement}</li>
-                ))}
-              </ul>
-            </section>
+            {course.requirements && course.requirements.length > 0 && (
+              <section className="mb-12">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">Requirements</h2>
+                <ul className="list-disc list-inside space-y-2 text-gray-700">
+                  {course.requirements.map((requirement, index) => (
+                    <li key={index}>{requirement}</li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
             {/* Description */}
             <section className="mb-12">
