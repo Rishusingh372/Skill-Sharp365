@@ -101,6 +101,21 @@ const courseSchema = new mongoose.Schema({
     learningOutcomes: [{
         type: String
     }],
+    curriculum: [{
+        title: { type: String, required: true },
+        lessons: [{
+            title: { type: String, required: true },
+            duration: { type: Number, default: 0 }, // in minutes
+            type: { type: String, enum: ['video', 'quiz', 'assignment'], default: 'video' },
+            isPreview: { type: Boolean, default: false }
+        }]
+    }],
+    reviews: [{
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        rating: { type: Number, required: true, min: 1, max: 5 },
+        comment: { type: String, required: true, maxlength: 500 },
+        createdAt: { type: Date, default: Date.now }
+    }],
     tags: [{
         type: String
     }]

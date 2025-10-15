@@ -7,9 +7,14 @@ const authRoutes = require('./routes/authRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const webhookRoutes = require('./routes/webhookRoutes');
 const cors = require('cors');
 
 const app = express();
+
+// Middleware for Stripe webhook raw body
+app.use('/api/webhook/stripe', express.raw({ type: 'application/json' }));
+
 app.use(express.json());
 app.use(cors());
 
@@ -24,8 +29,9 @@ app.use('/api/auth', authRoutes); // auth routes
 app.use('/api/courses', courseRoutes); // course routes
 app.use('/api/test', testRoutes); // test routes
 app.use('/api/upload', uploadRoutes); // upload routes
-app.use('/api/payment', paymentRoutes); // pyment routes
+app.use('/api/payment', paymentRoutes); // payment routes
 app.use('/api/admin', adminRoutes); // routes for admin
+app.use('/api/webhook', webhookRoutes); // webhook routes
 
 
 // port listening

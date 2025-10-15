@@ -315,7 +315,7 @@ const CourseDetail = () => {
                       <span className="text-sm text-success-600 font-medium">Enrolled ✓</span>
                     )}
                   </div>
-                  
+
                   {isEnrolled ? (
                     <div className="text-center py-6">
                       <svg className="w-12 h-12 text-success-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -330,18 +330,72 @@ const CourseDetail = () => {
                       </Link>
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      <p className="text-gray-600">Course content will be available after enrollment</p>
-                      <button
-                        onClick={handleEnroll}
-                        disabled={enrolling || !course.isPublished}
-                        className="btn-primary mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {enrolling ? 'Processing...' : 'Enroll to Access Content'}
-                      </button>
+                    <div className="space-y-4">
+                      {course.curriculum && course.curriculum.length > 0 ? (
+                        course.curriculum.map((section, sectionIndex) => (
+                          <div key={sectionIndex} className="border border-gray-200 rounded-lg">
+                            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                              <h4 className="font-medium text-gray-900">{section.title}</h4>
+                              <p className="text-sm text-gray-600">
+                                {section.lessons.length} lessons • {section.lessons.reduce((total, lesson) => total + lesson.duration, 0)} min
+                              </p>
+                            </div>
+                            <div className="divide-y divide-gray-100">
+                              {section.lessons.map((lesson, lessonIndex) => (
+                                <div key={lessonIndex} className="px-4 py-3 flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="flex-shrink-0">
+                                      {lesson.type === 'video' && (
+                                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        </svg>
+                                      )}
+                                      {lesson.type === 'quiz' && (
+                                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                      )}
+                                      {lesson.type === 'assignment' && (
+                                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">{lesson.title}</p>
+                                      <p className="text-xs text-gray-500">{lesson.duration} min</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    {lesson.isPreview && (
+                                      <span className="text-xs text-primary-600 font-medium">Preview</span>
+                                    )}
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                          </svg>
+                          <p className="text-gray-600">Course content will be available after enrollment</p>
+                        </div>
+                      )}
+                      <div className="text-center mt-6">
+                        <button
+                          onClick={handleEnroll}
+                          disabled={enrolling || !course.isPublished}
+                          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {enrolling ? 'Processing...' : 'Enroll to Access Content'}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -366,6 +420,55 @@ const CourseDetail = () => {
               <div className="prose max-w-none">
                 <p className="text-gray-700 whitespace-pre-line">{course.description}</p>
               </div>
+            </section>
+
+            {/* Reviews */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Student Reviews</h2>
+              {course.reviews && course.reviews.length > 0 ? (
+                <div className="space-y-6">
+                  {course.reviews.map((review, index) => (
+                    <div key={index} className="card p-6">
+                      <div className="flex items-start space-x-4">
+                        <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
+                          <span className="text-primary-600 text-sm font-medium">
+                            {review.user?.name?.charAt(0).toUpperCase() || 'U'}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <span className="font-medium text-gray-900">{review.user?.name || 'Anonymous'}</span>
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <svg
+                                  key={i}
+                                  className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-500">
+                              {new Date(review.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-gray-700">{review.comment}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="card p-8 text-center">
+                  <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
+                  <p className="text-gray-600">Be the first to review this course after completing it!</p>
+                </div>
+              )}
             </section>
 
             {/* Instructor */}
