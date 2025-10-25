@@ -16,7 +16,13 @@ const app = express();
 app.use('/api/webhook/stripe', express.raw({ type: 'application/json' }));
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'https://skill-sharp365.vercel.app'
+  ],
+  credentials: true
+}));
 
 
 // Connect to MongoDB
