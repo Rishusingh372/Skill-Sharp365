@@ -1,118 +1,176 @@
-import React, { useContext } from "react";
-import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
-import { AuthContext } from "./contexts/AuthContext";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
+// Components
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+// Pages
 import Home from "./pages/Home";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
-import StudentDashboard from "./pages/dashboard/StudentDashboard";
-import TeacherDashboard from "./pages/dashboard/TeacherDashboard";
-import AdminDashboard from "./pages/dashboard/AdminDashboard";
-import CourseView from "./pages/courses/CourseView";
-
-// Private Route
-const PrivateRoute = ({ children, allowedRoles }) => {
-  const { user, loading } = useContext(AuthContext);
-
-  if (loading)
-    return (
-      <div className="flex justify-center items-center h-screen text-lg">
-        Checking Authentication...
-      </div>
-    );
-
-  if (!user) return <Navigate to="/login" replace />;
-
-  if (allowedRoles && !allowedRoles.includes(user.role))
-    return <Navigate to="/" replace />;
-
-  return children;
-};
-
-// Layout wrapper
-const Layout = () => {
-  const location = useLocation();
-  const hideLayout =
-    location.pathname.startsWith("/login") ||
-    location.pathname.startsWith("/register");
-
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import Courses from "./pages/Courses";
+import CourseDetail from "./pages/CourseDetail";
+import Dashboard from "./pages/Dashboard";
+import InstructorDashboard from "./pages/InstructorDashboard";
+import CreateCourse from "./pages/CreateCourse";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import AdminDashboard from "./pages/AdminDashboard";
+import StudentDashboard from "./pages/StudentDashboard";
+function App() {
   return (
-    <>
-      {!hideLayout && <Navbar />}
-      <Outlet />
-      {!hideLayout && <Footer />}
-    </>
-  );
-};
+    <AuthProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+          <Navbar />
+          <main className="flex-grow">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/courses" element={<Courses />} />
+              <Route path="/courses/:id" element={<CourseDetail />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
 
-export default function App() {
-  const { user } = useContext(AuthContext);
+              {/* Protected Routes - All Authenticated Users */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <StudentDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              {/* // Add this route in your Routes component */}
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-  return (
-    <Routes>
-      {/* Public Layout with Navbar + Footer */}
-      <Route element={<Layout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/courses/:slug" element={<CourseView />} />
-      </Route>
+              {/* Protected Routes - Instructors Only */}
+              <Route
+                path="/instructor/dashboard"
+                element={
+                  <ProtectedRoute requireInstructor={true}>
+                    <InstructorDashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-      {/* Auth Pages (no navbar/footer) */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password/:token" element={<ResetPassword />} />
+              <Route
+                path="/instructor/courses/create"
+                element={
+                  <ProtectedRoute requireInstructor={true}>
+                    <CreateCourse />
+                  </ProtectedRoute>
+                }
+              />
 
-      {/* Student Dashboard */}
-      <Route
-        path="/dashboard/student"
-        element={
-          <PrivateRoute allowedRoles={["student"]}>
-            <StudentDashboard />
-          </PrivateRoute>
-        }
-      />
+              <Route
+                path="/instructor/courses/:id/edit"
+                element={
+                  <ProtectedRoute requireInstructor={true}>
+                    <div className="container mx-auto py-8">
+                      <h1 className="text-3xl font-bold text-center">
+                        Edit Course - Coming Soon
+                      </h1>
+                      <p className="text-gray-600 text-center mt-4">
+                        Course editing functionality will be implemented in
+                        future updates.
+                      </p>
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
 
-      {/* Teacher Dashboard */}
-      <Route
-        path="/dashboard/teacher"
-        element={
-          <PrivateRoute allowedRoles={["teacher"]}>
-            <TeacherDashboard />
-          </PrivateRoute>
-        }
-      />
+              {/* Learning Routes - Future Implementation */}
+              <Route
+                path="/learn/:courseId"
+                element={
+                  <ProtectedRoute>
+                    <div className="container mx-auto py-8">
+                      <h1 className="text-3xl font-bold text-center">
+                        Learning Interface - Coming Soon
+                      </h1>
+                      <p className="text-gray-600 text-center mt-4">
+                        Video player, course content, and progress tracking will
+                        be implemented soon.
+                      </p>
+                    </div>
+                  </ProtectedRoute>
+                }
+              />
 
-      {/* Admin Dashboard */}
-      <Route
-        path="/dashboard/admin"
-        element={
-          <PrivateRoute allowedRoles={["admin"]}>
-            <AdminDashboard />
-          </PrivateRoute>
-        }
-      />
-
-      {/* Redirect root to role-based dashboard if logged in */}
-      <Route
-        path="*"
-        element={
-          user ? (
-            user.role === "student" ? (
-              <Navigate to="/dashboard/student" replace />
-            ) : user.role === "teacher" ? (
-              <Navigate to="/dashboard/teacher" replace />
-            ) : (
-              <Navigate to="/dashboard/admin" replace />
-            )
-          ) : (
-            <Navigate to="/" replace />
-          )
-        }
-      />
-    </Routes>
+              {/* 404 Page */}
+              <Route
+                path="*"
+                element={
+                  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                    <div className="text-center">
+                      <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg
+                          className="w-12 h-12 text-primary-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
+                      </div>
+                      <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                        404 - Page Not Found
+                      </h1>
+                      <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                        The page you're looking for doesn't exist or has been
+                        moved.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button
+                          onClick={() => window.history.back()}
+                          className="btn-secondary"
+                        >
+                          Go Back
+                        </button>
+                        <a href="/" className="btn-primary">
+                          Go Home
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                }
+              />
+            </Routes>
+          </main>
+          <Footer />
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
+
+export default App;
